@@ -161,8 +161,14 @@ def download_pdf(n_clicks):
     buffer.seek(0)
     return dcc.send_bytes(buffer.getvalue(), "energy_report.pdf")
 
-# ✅ Fix: Gunicorn expects `server` at module level
-server = app.server  
+from dash import Dash
+import os
+
+app = Dash(__name__)
+server = app.server  # Gunicorn needs this
+
+app.layout = "Energy Dashboard"  # Replace with actual layout
 
 if __name__ == "__main__":
-    app.run(debug=False, port=8080, host="0.0.0.0")
+    port = int(os.environ.get("PORT", 8080))  # Get PORT from Railway
+    app.run(debug=False, host="0.0.0.0", port=port)
