@@ -14,7 +14,8 @@ async-lru==2.0.5
 async-timeout==4.0.3
 attrs==25.3.0
 babel==2.17.0
-bcc==0.29.1
+bcc==0.1.10
+
 beautifulsoup4==4.13.3
 bidict==0.23.1
 bleach==6.2.0
