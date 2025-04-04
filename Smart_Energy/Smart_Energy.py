@@ -186,16 +186,9 @@ def download_pdf(n_clicks):
 
     buffer.seek(0)
     return dcc.send_bytes(buffer.getvalue(), "energy_report.pdf")
-from dash import Dash
-
-app = Dash(__name__)
-server = app.server  # ✅ This should be outside the __name__ check
-
-# ...your layout and callbacks...
 
 if __name__ == "__main__":
-    app.run(debug=False, port=8025, host="0.0.0.0")
-
+    socketio.run(server, debug=False, port=8025, host="0.0.0.0")
 
 # In[ ]:
 
