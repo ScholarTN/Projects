@@ -1,4 +1,3 @@
-
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
@@ -12,15 +11,8 @@ import io
 import openai
 from pymongo import MongoClient
 import google.generativeai as genai
-
-
-
-
-
-
-
-# In[ ]:
-
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 # ✅ Initialize Gemini AI
 genai.configure(api_key="AIzaSyDJBErHnC-7WPAqXfBdr8cjebynAMm08SA")
@@ -44,8 +36,6 @@ def fetch_data(start_date=None, end_date=None):
         df["energy_consumption_kWh"] = df["payload"].apply(lambda x: float(x["energy_consumption_kWh"]))
         df["voltage"] = df["payload"].apply(lambda x: float(x["voltage"]))
         df["cost"] = df["energy_consumption_kWh"] * 0.12  # Assume $0.12 per kWh
-
-        # Anomaly detection: Identify high spikes (above mean + 2*std deviation)
         df["anomaly"] = df["energy_consumption_kWh"] > (df["energy_consumption_kWh"].mean() + 2 * df["energy_consumption_kWh"].std())
 
     return df
@@ -61,7 +51,6 @@ app = dash.Dash(__name__, server=server, external_stylesheets=[dbc.themes.BOOTST
 app.layout = dbc.Container([
     html.H1("⚡ Smart Energy Consumption Dashboard", className="text-center mt-4 mb-4"),
 
-    # Filters
     dbc.Row([
         dbc.Col(dcc.DatePickerRange(
             id='date-picker-range',
@@ -73,15 +62,9 @@ app.layout = dbc.Container([
         dbc.Col(html.Button("Download PDF", id="btn_pdf", className="btn btn-danger"), width=3)
     ], className="mb-4"),
 
-    # Summary Panel
-    dbc.Row([
-        dbc.Col(html.Div(id="summary-panel", className="alert alert-info"), width=12)
-    ], className="mb-4"),
-
-    # Energy Graph
-    dbc.Row([
-        dbc.Col(dcc.Graph(id="energy-graph"), width=12)
-    ], className="mb-4"),
+    dbc.Row([dbc.Col(html.Div(id="summary-panel", className="alert alert-info"), width=12)], className="mb-4"),
+    
+    dbc.Row([dbc.Col(dcc.Graph(id="energy-graph"), width=12)], className="mb-4"),
 
     # ✅ AI Chat Section
     dbc.Row([
@@ -93,10 +76,8 @@ app.layout = dbc.Container([
         ], width=12)
     ], className="mb-4"),
 
-    # Real-time Updates
     dcc.Interval(id="interval-component", interval=5000, n_intervals=0),
-
-    # Download Components
+    
     dcc.Download(id="download-dataframe-csv"),
     dcc.Download(id="download-dataframe-pdf")
 ])
@@ -125,7 +106,6 @@ def update_graph(n, start_date, end_date):
 
     fig.update_layout(title="Energy Consumption Over Time", xaxis_title="Time", yaxis_title="Value", template="plotly_dark")
 
-    # Summary panel text
     summary_text = f"""
     🔹 Total Energy: {df['energy_consumption_kWh'].sum():.2f} kWh  
     🔹 Peak Usage: {df['timestamp'][df['energy_consumption_kWh'].idxmax()]}  
@@ -147,7 +127,7 @@ def get_ai_response(n_clicks, user_input):
         return "⚠️ Please enter a question!"
 
     try:
-        response = genai.chat([{"role": "user", "content": user_input}])
+        response = genai.generate_content(user_input)
         return f"💡 AI Suggestion: {response.text}"
     except Exception as e:
         return f"❌ Error: {str(e)}"
@@ -170,11 +150,6 @@ def download_csv(n_clicks):
 )
 def download_pdf(n_clicks):
     df = fetch_data()
-
-    # Create PDF
-    from reportlab.lib.pagesizes import letter
-    from reportlab.pdfgen import canvas
-
     buffer = io.BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=letter)
     pdf.drawString(100, 750, "Smart Energy Consumption Report")
@@ -183,24 +158,11 @@ def download_pdf(n_clicks):
     pdf.drawString(100, 690, f"Estimated Cost: Rs{df['cost'].sum():.2f}")
     pdf.showPage()
     pdf.save()
-
     buffer.seek(0)
     return dcc.send_bytes(buffer.getvalue(), "energy_report.pdf")
 
+# ✅ Fix: Gunicorn expects `server` at module level
+server = app.server  
+
 if __name__ == "__main__":
-    socketio.run(server, debug=False, port=8025, host="0.0.0.0")
-
-# In[ ]:
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
+    app.run(debug=False, port=8025, host="0.0.0.0")
