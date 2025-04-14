@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diabetes Health Predictor</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png">
+  <meta name="theme-color" content="#1976d2">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  
+  <div class="container">
+   <!-- Role Selection -->
+<section id="role-selection" class="card glass-card">
+  <div class="welcome-container">
+    <h2 class="welcome-title">Welcome to <span>HealthAI</span></h2>
+    <p class="welcome-quote">"Your health is your wealth - prevention is the best medicine"</p>
+  </div>
+  
+  <div class="role-cards">
+    <div class="role-card user-role" id="select-user">
+      <div class="role-icon">
+        <i class="fas fa-user-shield"></i>
+      </div>
+      <h3>Patient Portal</h3>
+      <p>Check your diabetes risk and track your health</p>
+      <div class="pulse-dot"></div>
+    </div>
+    
+    <div class="role-card doctor-role" id="select-doctor">
+      <div class="role-icon">
+        <i class="fas fa-user-md"></i>
+      </div>
+      <h3>Doctor Portal</h3>
+      <p>Access patient records and analytics</p>
+      <div class="pulse-dot"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Login Form -->
+<section id="login-form" class="card glass-card" style="display: none;">
+  <div class="login-header">
+    <div class="biometric-icon">
+      <i class="fas fa-fingerprint"></i>
+    </div>
+    <h2>Secure Login</h2>
+    <p>Access your health portal</p>
+  </div>
+  
+  <form id="login-form-data" class="auth-form">
+    <div class="input-field">
+      <i class="fas fa-envelope"></i>
+      <input type="email" id="login-email" placeholder=" " required>
+      <label>Email</label>
+      <div class="underline"></div>
+    </div>
+    
+    <div class="input-field">
+      <i class="fas fa-lock"></i>
+      <input type="password" id="login-password" placeholder=" " required>
+      <label>Password</label>
+      <div class="underline"></div>
+    </div>
+    
+    <div class="input-field" id="login-workid-field" style="display: none;">
+      <i class="fas fa-id-card"></i>
+      <input type="text" id="login-workid" placeholder=" " required>
+      <label>Work ID</label>
+      <div class="underline"></div>
+    </div>
+    
+    <button type="submit" class="auth-btn">
+      <span>Login</span>
+      <i class="fas fa-arrow-right"></i>
+    </button>
+  </form>
+  
+  <div class="auth-footer">
+    <p>Don't have an account? <a href="#" id="show-register">Register here</a></p>
+    <div class="security-badge">
+      <i class="fas fa-shield-alt"></i>
+      <span>HIPAA Compliant</span>
+    </div>
+  </div>
+</section>
+
+<!-- Register Role Selection -->
+<section id="register-role-selection" class="card glass-card" style="display: none;">
+  <div class="welcome-container">
+    <h2>Register for <span>HealthAI</span></h2>
+    <p class="welcome-quote">"Your health is our priority"</p>
+  </div>
+  
+  <div class="role-cards">
+    <div class="role-card user-role" id="register-select-user">
+      <div class="role-icon">
+        <i class="fas fa-user-shield"></i>
+      </div>
+      <h3>Patient Registration</h3>
+      <p>Create your personal health account</p>
+      <div class="pulse-dot"></div>
+    </div>
+    
+    <div class="role-card doctor-role" id="register-select-doctor">
+      <div class="role-icon">
+        <i class="fas fa-user-md"></i>
+      </div>
+      <h3>Doctor Registration</h3>
+      <p>Register your medical practice</p>
+      <div class="pulse-dot"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Register Patient Form -->
+<section id="register-patient-form" class="card glass-card" style="display: none;">
+  <div class="login-header">
+    <div class="biometric-icon">
+      <i class="fas fa-user-plus"></i>
+    </div>
+    <h2>Patient Registration</h2>
+    <p>Create your personal health account</p>
+  </div>
+  
+  <form id="register-patient-form-data" class="auth-form">
+    <div class="input-field">
+      <i class="fas fa-envelope"></i>
+      <input type="email" id="register-patient-email" placeholder=" " required>
+      <label>Email</label>
+      <div class="underline"></div>
+    </div>
+    
+    <div class="input-field">
+      <i class="fas fa-lock"></i>
+      <input type="password" id="register-patient-password" placeholder=" " required>
+      <label>Password</label>
+      <div class="underline"></div>
+    </div>
+    
+    <button type="submit" class="auth-btn">
+      <span>Register</span>
+      <i class="fas fa-arrow-right"></i>
+    </button>
+  </form>
+  
+  <div class="auth-footer">
+    <p>Already have an account? <a href="#" id="register-show-login">Login here</a></p>
+  </div>
+</section>
+
+<!-- Register Doctor Form -->
+<section id="register-doctor-form" class="card glass-card" style="display: none;">
+  <div class="login-header">
+    <div class="biometric-icon">
+      <i class="fas fa-user-md"></i>
+    </div>
+    <h2>Doctor Registration</h2>
+    <p>Register your medical practice</p>
+  </div>
+  
+  <form id="register-doctor-form-data" class="auth-form">
+    <div class="input-field">
+      <i class="fas fa-envelope"></i>
+      <input type="email" id="register-doctor-email" placeholder=" " required>
+      <label>Email</label>
+      <div class="underline"></div>
+    </div>
+    
+    <div class="input-field">
+      <i class="fas fa-lock"></i>
+      <input type="password" id="register-doctor-password" placeholder=" " required>
+      <label>Password</label>
+      <div class="underline"></div>
+    </div>
+    
+    <div class="input-field">
+      <i class="fas fa-id-card"></i>
+      <input type="text" id="register-doctor-workid" placeholder=" " required>
+      <label>Work ID</label>
+      <div class="underline"></div>
+    </div>
+    
+    <button type="submit" class="auth-btn">
+      <span>Register</span>
+      <i class="fas fa-arrow-right"></i>
+    </button>
+  </form>
+  
+  <div class="auth-footer">
+    <p>Already have an account? <a href="#" id="register-show-login">Login here</a></p>
+  </div>
+</section>
+
+    <!-- User Dashboard -->
+    <section id="user-dashboard" class="card" style="display: none;">
+      <h2>Diabetes Risk Assessment</h2>
+      <!-- Replace your prediction form with this -->
+<!-- Replace your prediction form with this -->
+<form id="predict-form">
+  <!-- Personal Info -->
+  <div class="form-row">
+    <div class="input-group">
+      <label for="age">Age</label>
+      <input type="number" id="age" placeholder="Enter age" required min="1" max="120">
+    </div>
+    <div class="input-group">
+      <label for="gender">Gender</label>
+      <select id="gender" required>
+        <option value="">Select</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Pregnancy Field (Female Only) -->
+  <div id="pregnancy-field" style="display:none">
+    <div class="input-group">
+      <label for="is_pregnant">Are you pregnant?</label>
+      <select id="is_pregnant">
+        <option value="0">No</option>
+        <option value="1">Yes</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- BMI Calculation -->
+  <div class="form-row">
+    <div class="input-group">
+      <label for="height">Height (cm)</label>
+      <input type="number" id="height" placeholder="Enter height to calculate BMI" min="100" max="250">
+    </div>
+    <div class="input-group">
+      <label for="weight">Weight (kg)</label>
+      <input type="number" id="weight" placeholder="Enter weight to calculate BMI" min="30" max="300">
+    </div>
+  </div>
+
+  <!-- Direct BMI Input -->
+  <div class="input-group">
+    <label for="bmi">Or enter BMI directly</label>
+    <input type="number" id="bmi" step="0.1" placeholder="BMI will auto-calculate" min="10" max="50">
+    <div id="bmi-guide" class="hint-text"></div>
+  </div>
+
+  <!-- Other Metrics -->
+  <div class="form-row">
+    <div class="input-group">
+      <label for="glucose">Glucose (mg/dL)</label>
+      <input type="number" id="glucose" placeholder="Normal < 100" required min="50" max="300">
+    </div>
+    <div class="input-group">
+      <label for="blood_pressure">Blood Pressure (mmHg)</label>
+      <input type="number" id="blood_pressure" placeholder="Normal < 120" required min="50" max="200">
+    </div>
+  </div>
+
+  <!-- Family History -->
+  <div class="input-group">
+    <label for="family_history">Family History of Diabetes?</label>
+    <select id="family_history" required>
+      <option value="">Select</option>
+      <option value="1">Yes</option>
+      <option value="0">No</option>
+    </select>
+  </div>
+
+  <button type="submit" class="btn-primary">Check Risk</button>
+</form>
+
+      <div id="result">
+        <div class="chart-container">
+          <canvas id="riskChart"></canvas>
+        </div>
+        <div id="suggestion" class="suggestion-box"></div>
+      </div>
+      <div id="user-logs"></div>
+      <button id="user-logout" class="btn-secondary">Logout</button>
+    </section>
+
+    <!-- Doctor Dashboard -->
+    <section id="doctor-dashboard" class="card" style="display: none;">
+      <h2>Doctor Dashboard</h2>
+      <div class="doctor-stats">
+        <div class="stat-card">
+          <h3>Total Patients</h3>
+          <p id="total-patients">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>High Risk Cases</h3>
+          <p id="high-risk-cases">0</p>
+        </div>
+      </div>
+      
+      <div class="chart-container">
+        <canvas id="doctorChart"></canvas>
+      </div>
+      
+      <div id="patient-records">
+        <h3>Patient Records</h3>
+        <div id="records-list"></div>
+      </div>
+      
+      <div class="report-buttons">
+        <button id="download-csv" class="btn-primary">
+          <i class="fas fa-file-csv"></i> Download CSV
+        </button>
+        <button id="download-pdf" class="btn-primary">
+          <i class="fas fa-file-pdf"></i> Download PDF
+        </button>
+      </div>
+      <button id="doctor-logout" class="btn-secondary">Logout</button>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
