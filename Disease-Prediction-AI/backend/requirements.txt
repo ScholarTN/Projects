@@ -1,0 +1,9 @@
+flask
+flask-cors
+pymongo
+werkzeug
+scikit-learn
+joblib
+fpdf2
+python-dotenv
+gunicorn
