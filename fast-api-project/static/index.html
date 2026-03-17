@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Record Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f; --surface: #13131a; --surface2: #1c1c27;
+      --border: #2a2a3a; --accent: #7c6af7; --accent2: #f76a8c;
+      --accent3: #6af7c8; --text: #e8e8f0; --muted: #6b6b85;
+      --success: #6af7c8; --danger: #f76a8c; --warn: #f7c46a;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; overflow-x: hidden; }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: linear-gradient(rgba(124,106,247,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,106,247,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; position: relative; z-index: 1; }
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); animation: fadeDown 0.6s ease both; }
+    .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.5rem; letter-spacing: -0.5px; }
+    .logo span { color: var(--accent); }
+    .status-pill { display: flex; align-items: center; gap: 0.5rem; background: rgba(106,247,200,0.08); border: 1px solid rgba(106,247,200,0.2); padding: 0.35rem 0.9rem; border-radius: 999px; font-size: 0.75rem; color: var(--accent3); }
+    .status-dot { width: 7px; height: 7px; background: var(--accent3); border-radius: 50%; animation: pulse 2s infinite; }
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; background: var(--surface); padding: 0.4rem; border-radius: 12px; border: 1px solid var(--border); animation: fadeDown 0.6s 0.1s ease both; }
+    .tab { flex: 1; padding: 0.65rem 1rem; border: none; background: transparent; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.8rem; cursor: pointer; border-radius: 8px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
+    .tab:hover { color: var(--text); background: var(--surface2); }
+    .tab.active { background: var(--accent); color: #fff; font-weight: 500; }
+    .panel { display: none; animation: fadeUp 0.3s ease both; }
+    .panel.active { display: block; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.75rem; margin-bottom: 1.5rem; }
+    .card-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .card-title .icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.75rem; align-items: end; }
+    .field { display: flex; flex-direction: column; gap: 0.4rem; }
+    .field-error { border-color: var(--danger) !important; }
+    .error-msg { font-size: 0.7rem; color: var(--danger); margin-top: 0.25rem; display: none; }
+    .error-msg.show { display: block; }
+    label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    input, select, textarea { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.85rem; padding: 0.65rem 0.9rem; border-radius: 10px; outline: none; transition: border-color 0.2s; width: 100%; }
+    input:focus, textarea:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 80px; }
+    .btn { padding: 0.65rem 1.4rem; border: none; border-radius: 10px; font-family: 'DM Mono', monospace; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #9080ff; transform: translateY(-1px); }
+    .btn-danger { background: rgba(247,106,140,0.15); color: var(--danger); border: 1px solid rgba(247,106,140,0.3); }
+    .btn-danger:hover { background: rgba(247,106,140,0.25); }
+    .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-success { background: rgba(106,247,200,0.15); color: var(--accent3); border: 1px solid rgba(106,247,200,0.3); }
+    .btn-success:hover { background: rgba(106,247,200,0.25); }
+    .btn-ai { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+    .btn-ai:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+    /* Search & filter bar */
+    .toolbar { display: flex; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: center; }
+    .search-wrap { position: relative; flex: 1; min-width: 180px; }
+    .search-wrap input { padding-left: 2.2rem; }
+    .search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.85rem; pointer-events: none; }
+    .filter-select { width: auto; min-width: 120px; }
+    .count-badge { font-size: 0.75rem; color: var(--muted); margin-left: auto; white-space: nowrap; }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    th { text-align: left; padding: 0.65rem 1rem; color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; }
+    th:hover { color: var(--text); }
+    th .sort-icon { opacity: 0.4; margin-left: 0.3rem; }
+    th.sorted .sort-icon { opacity: 1; color: var(--accent); }
+    td { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(42,42,58,0.5); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(124,106,247,0.04); }
+    .grade-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 500; }
+    .grade-A { background: rgba(106,247,200,0.12); color: var(--accent3); }
+    .grade-B { background: rgba(124,106,247,0.12); color: var(--accent); }
+    .grade-C { background: rgba(247,196,106,0.12); color: var(--warn); }
+    .grade-D, .grade-F { background: rgba(247,106,140,0.12); color: var(--danger); }
+    .actions { display: flex; gap: 0.5rem; }
+
+    /* AI */
+    .ai-box { background: linear-gradient(135deg, rgba(124,106,247,0.08), rgba(247,106,140,0.05)); border: 1px solid rgba(124,106,247,0.25); border-radius: 16px; padding: 1.75rem; }
+    .ai-response { margin-top: 1.25rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; font-size: 0.85rem; line-height: 1.7; color: var(--text); display: none; white-space: pre-wrap; }
+    .ai-response.visible { display: block; animation: fadeUp 0.3s ease; }
+    .ai-label { font-size: 0.7rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+
+    /* Toast */
+    #toast { position: fixed; bottom: 2rem; right: 2rem; padding: 0.8rem 1.4rem; border-radius: 12px; font-size: 0.82rem; z-index: 999; transform: translateY(100px); opacity: 0; transition: all 0.3s ease; max-width: 340px; }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { background: rgba(106,247,200,0.15); border: 1px solid rgba(106,247,200,0.3); color: var(--accent3); }
+    #toast.error { background: rgba(247,106,140,0.15); border: 1px solid rgba(247,106,140,0.3); color: var(--danger); }
+
+    /* Empty */
+    .empty { text-align: center; padding: 3rem; color: var(--muted); font-size: 0.85rem; }
+    .empty .emoji { font-size: 2.5rem; margin-bottom: 0.75rem; }
+
+    /* Spinner */
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; width: 100%; max-width: 420px; animation: fadeUp 0.3s ease; }
+    .modal h3 { font-family: 'Syne', sans-serif; margin-bottom: 1.25rem; }
+    .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; justify-content: flex-end; }
+
+    @keyframes fadeDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeUp   { from { opacity:0; transform:translateY(12px);  } to { opacity:1; transform:translateY(0); } }
+    @keyframes pulse    { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+    @keyframes spin     { to { transform: rotate(360deg); } }
+    @media (max-width: 640px) { .form-row { grid-template-columns: 1fr 1fr; } .tabs { flex-wrap: wrap; } }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">Student<span>.</span>Manager</div>
+    <div class="status-pill"><div class="status-dot"></div> API Connected</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('students', this)">📋 Students</button>
+    <button class="tab" onclick="switchTab('add', this)">➕ Add Student</button>
+    <button class="tab" onclick="switchTab('ai', this)">🤖 Ask AI</button>
+  </div>
+
+  <!-- STUDENTS PANEL -->
+  <div id="tab-students" class="panel active">
+    <div class="card">
+      <div class="card-title">
+        <div class="icon" style="background:rgba(124,106,247,0.15)">📋</div>
+        All Students
+        <div style="margin-left:auto;display:flex;gap:0.5rem">
+          <button class="btn btn-success" style="font-size:0.75rem;padding:0.4rem 0.9rem" onclick="exportCSV()">⬇️ Export CSV</button>
+          <button class="btn btn-ghost" style="font-size:0.75rem;padding:0.4rem 0.9rem" onclick="loadStudents()">↻ Refresh</button>
+        </div>
+      </div>
+
+      <!-- Search & Filter toolbar -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input id="search-input" type="text" placeholder="Search by name..." oninput="filterTable()" />
+        </div>
+        <select class="filter-select" id="grade-filter" onchange="filterTable()">
+          <option value="">All Grades</option>
+          <option>A+</option><option>A</option><option>A-</option>
+          <option>B+</option><option>B</option><option>B-</option>
+          <option>C+</option><option>C</option><option>C-</option>
+          <option>D</option><option>F</option>
+        </select>
+        <select class="filter-select" id="age-filter" onchange="filterTable()">
+          <option value="">All Ages</option>
+          <option value="under20">Under 20</option>
+          <option value="20-25">20 – 25</option>
+          <option value="over25">Over 25</option>
+        </select>
+        <span class="count-badge" id="count-badge">0 students</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th onclick="sortTable('Name')" id="th-Name"">Name <span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('Age')"  id="th-Age">Age <span class="sort-icon">↕</span></th>
+              <th onclick="sortTable('Grade')" id="th-Grade">Grade <span class="sort-icon">↕</span></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="students-tbody">
+            <tr><td colspan="5"><div class="empty"><div class="emoji">⏳</div>Loading students...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD PANEL -->
+  <div id="tab-add" class="panel">
+    <div class="card">
+      <div class="card-title">
+        <div class="icon" style="background:rgba(106,247,200,0.12)">➕</div>
+        Add New Student
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Full Name *</label>
+          <input id="add-name" type="text" placeholder="e.g. Roshan Paul" oninput="clearErr('name')" />
+          <span class="error-msg" id="err-name">Name is required</span>
+        </div>
+        <div class="field">
+          <label>Age *</label>
+          <input id="add-age" type="number" placeholder="e.g. 21" min="1" max="120" oninput="clearErr('age')" />
+          <span class="error-msg" id="err-age">Enter a valid age (1–120)</span>
+        </div>
+        <div class="field">
+          <label>Grade *</label>
+          <select id="add-grade" onchange="clearErr('grade')">
+            <option value="">Select grade</option>
+            <option>A+</option><option>A</option><option>A-</option>
+            <option>B+</option><option>B</option><option>B-</option>
+            <option>C+</option><option>C</option><option>C-</option>
+            <option>D</option><option>F</option>
+          </select>
+          <span class="error-msg" id="err-grade">Please select a grade</span>
+        </div>
+        <button class="btn btn-primary" onclick="addStudent()" id="add-btn">➕ Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI PANEL -->
+  <div id="tab-ai" class="panel">
+    <div class="ai-box">
+      <div class="card-title" style="margin-bottom:1rem">
+        <div class="icon" style="background:rgba(124,106,247,0.15)">🤖</div>
+        Ask Groq AI about your students
+      </div>
+      <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1.25rem">
+        Ask anything about your student data — comparisons, averages, summaries, and more.
+      </p>
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem">
+        <button class="btn btn-ghost" style="font-size:0.75rem" onclick="setQuestion('Who has the highest grade?')">Who has the highest grade?</button>
+        <button class="btn btn-ghost" style="font-size:0.75rem" onclick="setQuestion('How many students are there in total?')">Total students?</button>
+        <button class="btn btn-ghost" style="font-size:0.75rem" onclick="setQuestion('What is the average age of students?')">Average age?</button>
+        <button class="btn btn-ghost" style="font-size:0.75rem" onclick="setQuestion('List all students with grade A or above.')">Grade A students?</button>
+        <button class="btn btn-ghost" style="font-size:0.75rem" onclick="setQuestion('Who is the youngest student?')">Youngest student?</button>
+        <button class="btn btn-ghost" style="font-size:0.75rem" onclick="setQuestion('Give me a summary of all students.')">Full summary?</button>
+      </div>
+      <div class="field" style="margin-bottom:1rem">
+        <label>Your Question</label>
+        <textarea id="ai-question" placeholder="e.g. Who scored the lowest grade?"></textarea>
+      </div>
+      <button class="btn btn-ai" onclick="askAI()" id="ai-btn">✨ Ask Groq</button>
+      <div id="ai-response" class="ai-response">
+        <div class="ai-label">🤖 Groq says</div>
+        <div id="ai-answer"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h3>✏️ Edit Student</h3>
+    <input type="hidden" id="edit-name-original" />
+    <div class="field" style="margin-bottom:1rem">
+      <label>Age</label>
+      <input id="edit-age" type="number" placeholder="New age" min="1" max="120" />
+      <span class="error-msg" id="err-edit-age">Enter a valid age (1–120)</span>
+    </div>
+    <div class="field">
+      <label>Grade</label>
+      <select id="edit-grade">
+        <option value="">Keep current</option>
+        <option>A+</option><option>A</option><option>A-</option>
+        <option>B+</option><option>B</option><option>B-</option>
+        <option>C+</option><option>C</option><option>C-</option>
+        <option>D</option><option>F</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const API = 'http://127.0.0.1:8000';
+  let allStudents = [];
+  let sortKey = '';
+  let sortAsc = true;
+
+  // ── Tab switching ──
+  function switchTab(tab, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+    if (tab === 'students') loadStudents();
+  }
+
+  // ── Toast ──
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `show ${type}`;
+    setTimeout(() => t.className = '', 3500);
+  }
+
+  // ── Validation helpers ──
+  function showErr(field, msg) {
+    const input = document.getElementById('add-' + field) || document.getElementById('edit-' + field);
+    const err = document.getElementById('err-' + field);
+    if (input) input.classList.add('field-error');
+    if (err) { if (msg) err.textContent = msg; err.classList.add('show'); }
+  }
+  function clearErr(field) {
+    const input = document.getElementById('add-' + field) || document.getElementById('edit-' + field);
+    const err = document.getElementById('err-' + field);
+    if (input) input.classList.remove('field-error');
+    if (err) err.classList.remove('show');
+  }
+  function validateAdd() {
+    let ok = true;
+    const name = document.getElementById('add-name').value.trim();
+    const age = parseInt(document.getElementById('add-age').value);
+    const grade = document.getElementById('add-grade').value;
+    if (!name) { showErr('name', 'Name is required'); ok = false; }
+    else if (name.length < 2) { showErr('name', 'Name must be at least 2 characters'); ok = false; }
+    if (!age || age < 1 || age > 120) { showErr('age', 'Enter a valid age (1–120)'); ok = false; }
+    if (!grade) { showErr('grade', 'Please select a grade'); ok = false; }
+    return ok;
+  }
+
+  // ── Load Students ──
+  async function loadStudents() {
+    const tbody = document.getElementById('students-tbody');
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="emoji">⏳</div>Loading...</div></td></tr>`;
+    try {
+      const res = await fetch(`${API}/students`);
+      const data = await res.json();
+      allStudents = data.students || [];
+      renderTable(allStudents);
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="emoji">❌</div>Could not connect to API. Is the server running?</div></td></tr>`;
+    }
+  }
+
+  function renderTable(students) {
+    const tbody = document.getElementById('students-tbody');
+    document.getElementById('count-badge').textContent = `${students.length} student${students.length !== 1 ? 's' : ''}`;
+    if (students.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="emoji">🎓</div>No students match your search.</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = students.map((s, i) => `
+      <tr>
+        <td style="color:var(--muted)">${i + 1}</td>
+        <td style="font-weight:500">${s.Name || '—'}</td>
+        <td>${s.Age || '—'}</td>
+        <td><span class="grade-badge grade-${(s.Grade||'')[0]}">${s.Grade || '—'}</span></td>
+        <td>
+          <div class="actions">
+            <button class="btn btn-ghost" style="padding:0.4rem 0.75rem;font-size:0.75rem" onclick="openEdit('${s.Name}','${s.Age}','${s.Grade}')">✏️ Edit</button>
+            <button class="btn btn-danger" style="padding:0.4rem 0.75rem;font-size:0.75rem" onclick="deleteStudent('${s.Name}')">🗑️ Delete</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  // ── Search & Filter ──
+  function filterTable() {
+    const search = document.getElementById('search-input').value.toLowerCase();
+    const grade  = document.getElementById('grade-filter').value;
+    const age    = document.getElementById('age-filter').value;
+    let filtered = allStudents.filter(s => {
+      const nameMatch  = (s.Name || '').toLowerCase().includes(search);
+      const gradeMatch = !grade || s.Grade === grade;
+      const a = parseInt(s.Age);
+      const ageMatch = !age ||
+        (age === 'under20' && a < 20) ||
+        (age === '20-25'   && a >= 20 && a <= 25) ||
+        (age === 'over25'  && a > 25);
+      return nameMatch && gradeMatch && ageMatch;
+    });
+    if (sortKey) filtered = sortBy(filtered, sortKey, sortAsc);
+    renderTable(filtered);
+  }
+
+  // ── Sort ──
+  function sortTable(key) {
+    if (sortKey === key) sortAsc = !sortAsc;
+    else { sortKey = key; sortAsc = true; }
+    document.querySelectorAll('th').forEach(t => t.classList.remove('sorted'));
+    const th = document.getElementById('th-' + key);
+    if (th) {
+      th.classList.add('sorted');
+      th.querySelector('.sort-icon').textContent = sortAsc ? '↑' : '↓';
+    }
+    filterTable();
+  }
+  function sortBy(arr, key, asc) {
+    return [...arr].sort((a, b) => {
+      let va = a[key] || ''; let vb = b[key] || '';
+      if (key === 'Age') { va = parseInt(va)||0; vb = parseInt(vb)||0; }
+      if (va < vb) return asc ? -1 : 1;
+      if (va > vb) return asc ? 1 : -1;
+      return 0;
+    });
+  }
+
+  // ── Export CSV ──
+  function exportCSV() {
+    if (allStudents.length === 0) { showToast('No students to export', 'error'); return; }
+    const headers = ['Name', 'Age', 'Grade'];
+    const rows = allStudents.map(s => [s.Name, s.Age, s.Grade].map(v => `"${v || ''}"`).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'students.csv'; a.click();
+    URL.revokeObjectURL(url);
+    showToast('📥 CSV exported successfully!');
+  }
+
+  // ── Add Student ──
+  async function addStudent() {
+    if (!validateAdd()) return;
+    const name  = document.getElementById('add-name').value.trim();
+    const age   = parseInt(document.getElementById('add-age').value);
+    const grade = document.getElementById('add-grade').value;
+    const btn   = document.getElementById('add-btn');
+    btn.innerHTML = '<span class="spinner"></span> Adding...'; btn.disabled = true;
+    try {
+      const res = await fetch(`${API}/students`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, age, grade })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`✅ ${name} added successfully!`);
+        ['add-name','add-age'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('add-grade').value = '';
+      } else {
+        showToast(data.detail || 'Failed to add student', 'error');
+      }
+    } catch(e) { showToast('Could not reach API', 'error'); }
+    btn.innerHTML = '➕ Add'; btn.disabled = false;
+  }
+
+  // ── Delete ──
+  async function deleteStudent(name) {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`${API}/students/${encodeURIComponent(name)}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) { showToast(`🗑️ ${name} deleted`); loadStudents(); }
+      else showToast(data.detail || 'Failed to delete', 'error');
+    } catch(e) { showToast('Could not reach API', 'error'); }
+  }
+
+  // ── Edit Modal ──
+  function openEdit(name, age, grade) {
+    document.getElementById('edit-name-original').value = name;
+    document.getElementById('edit-age').value = age;
+    document.getElementById('edit-grade').value = grade;
+    document.getElementById('edit-modal').classList.add('open');
+  }
+  function closeModal() { document.getElementById('edit-modal').classList.remove('open'); }
+
+  async function submitEdit() {
+    const age = parseInt(document.getElementById('edit-age').value);
+    if (age && (age < 1 || age > 120)) { showErr('edit-age', 'Enter a valid age (1–120)'); return; }
+    const name  = document.getElementById('edit-name-original').value;
+    const grade = document.getElementById('edit-grade').value || null;
+    try {
+      const res = await fetch(`${API}/students/${encodeURIComponent(name)}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ age: age || null, grade })
+      });
+      const data = await res.json();
+      if (res.ok) { showToast(`✅ ${name} updated!`); closeModal(); loadStudents(); }
+      else showToast(data.detail || 'Update failed', 'error');
+    } catch(e) { showToast('Could not reach API', 'error'); }
+  }
+
+  // ── Ask AI ──
+  function setQuestion(q) { document.getElementById('ai-question').value = q; }
+
+  async function askAI() {
+    const question = document.getElementById('ai-question').value.trim();
+    if (!question) { showToast('Please enter a question', 'error'); return; }
+    const btn = document.getElementById('ai-btn');
+    btn.innerHTML = '<span class="spinner"></span> Thinking...'; btn.disabled = true;
+    document.getElementById('ai-response').classList.remove('visible');
+    try {
+      const res = await fetch(`${API}/ask`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('ai-answer').textContent = data.answer;
+        document.getElementById('ai-response').classList.add('visible');
+      } else { showToast(data.detail || 'AI error', 'error'); }
+    } catch(e) { showToast('Could not reach API', 'error'); }
+    btn.innerHTML = '✨ Ask Groq'; btn.disabled = false;
+  }
+
+  // Close modal on outside click
+  document.getElementById('edit-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  loadStudents();
+</script>
+</body>
+</html>
