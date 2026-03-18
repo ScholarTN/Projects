@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Expense Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#07080f;--surface:#0f1018;--surface2:#181923;--border:#22243a;
+      --accent:#4ade80;--accent2:#60a5fa;--accent3:#f472b6;
+      --text:#e2e8f0;--muted:#4a5068;--danger:#f87171;--warn:#fbbf24;
+    }
+    body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+      background:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(74,222,128,0.06),transparent)}
+    .container{max-width:1150px;margin:0 auto;padding:2rem 1.5rem;position:relative;z-index:1}
+
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);animation:fadeDown .5s ease both}
+    .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;letter-spacing:-0.5px}
+    .logo span{color:var(--accent)}
+    .total-pill{display:flex;align-items:center;gap:0.6rem;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);padding:.4rem 1rem;border-radius:999px;font-size:.8rem;color:var(--accent)}
+    .total-pill strong{font-size:1rem}
+
+    /* Summary cards */
+    .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2rem;animation:fadeUp .5s .1s ease both}
+    .sum-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem;transition:border-color .2s}
+    .sum-card:hover{border-color:rgba(74,222,128,0.3)}
+    .sum-card .cat{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem}
+    .sum-card .amt{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;color:var(--accent)}
+    .sum-card .label{font-size:.72rem;color:var(--muted);margin-top:.2rem}
+
+    /* Tabs */
+    .tabs{display:flex;gap:.4rem;margin-bottom:1.75rem;background:var(--surface);padding:.35rem;border-radius:12px;border:1px solid var(--border);animation:fadeDown .5s .15s ease both}
+    .tab{flex:1;padding:.6rem .8rem;border:none;background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:.78rem;cursor:pointer;border-radius:8px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.35rem}
+    .tab:hover{color:var(--text);background:var(--surface2)}
+    .tab.active{background:var(--accent);color:#000;font-weight:600}
+    .panel{display:none;animation:fadeUp .3s ease both}
+    .panel.active{display:block}
+
+    /* Card */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.75rem;margin-bottom:1.5rem}
+    .card-title{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+    .icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.85rem}
+
+    /* Form */
+    .form-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:.75rem;align-items:end;margin-bottom:.75rem}
+    .form-grid2{display:grid;grid-template-columns:1fr auto;gap:.75rem;align-items:end}
+    .field{display:flex;flex-direction:column;gap:.35rem}
+    label{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+    input,select,textarea{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:.83rem;padding:.6rem .85rem;border-radius:10px;outline:none;transition:border-color .2s;width:100%}
+    input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+    .field-error input,.field-error select{border-color:var(--danger)!important}
+    .err{font-size:.68rem;color:var(--danger);display:none;margin-top:.2rem}
+    .err.show{display:block}
+    textarea{resize:vertical;min-height:70px}
+
+    /* Buttons */
+    .btn{padding:.6rem 1.3rem;border:none;border-radius:10px;font-family:'DM Mono',monospace;font-size:.8rem;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:.35rem;white-space:nowrap}
+    .btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+    .btn-primary{background:var(--accent);color:#000;font-weight:600}
+    .btn-primary:hover{background:#6ee7a0;transform:translateY(-1px)}
+    .btn-danger{background:rgba(248,113,113,.12);color:var(--danger);border:1px solid rgba(248,113,113,.25)}
+    .btn-danger:hover{background:rgba(248,113,113,.22)}
+    .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+    .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+    .btn-blue{background:rgba(96,165,250,.15);color:var(--accent2);border:1px solid rgba(96,165,250,.25)}
+    .btn-blue:hover{background:rgba(96,165,250,.25)}
+    .btn-ai{background:linear-gradient(135deg,#4ade80,#60a5fa);color:#000;font-weight:600}
+    .btn-ai:hover{opacity:.9;transform:translateY(-1px)}
+
+    /* Toolbar */
+    .toolbar{display:flex;gap:.75rem;margin-bottom:1.1rem;flex-wrap:wrap;align-items:center}
+    .search-wrap{position:relative;flex:1;min-width:160px}
+    .search-wrap input{padding-left:2.1rem}
+    .search-icon{position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:.8rem}
+    .filter-select{width:auto;min-width:130px}
+    .count-badge{font-size:.72rem;color:var(--muted);margin-left:auto;white-space:nowrap}
+
+    /* Table */
+    .table-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:.81rem}
+    th{text-align:left;padding:.6rem .9rem;color:var(--muted);font-size:.67rem;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+    th:hover{color:var(--text)}
+    th.sorted .si{color:var(--accent)}
+    td{padding:.8rem .9rem;border-bottom:1px solid rgba(34,36,58,.6);vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(74,222,128,.03)}
+    .cat-badge{display:inline-block;padding:.18rem .55rem;border-radius:6px;font-size:.72rem;font-weight:500}
+    .cat-Food{background:rgba(251,191,36,.1);color:var(--warn)}
+    .cat-Transport{background:rgba(96,165,250,.1);color:var(--accent2)}
+    .cat-Entertainment{background:rgba(244,114,182,.1);color:var(--accent3)}
+    .cat-Health{background:rgba(74,222,128,.1);color:var(--accent)}
+    .cat-Shopping{background:rgba(167,139,250,.1);color:#a78bfa}
+    .cat-Bills{background:rgba(248,113,113,.1);color:var(--danger)}
+    .cat-Other{background:rgba(100,116,139,.1);color:#94a3b8}
+    .amount-cell{font-weight:600;color:var(--accent)}
+    .actions{display:flex;gap:.4rem}
+
+    /* AI */
+    .ai-box{background:linear-gradient(135deg,rgba(74,222,128,.06),rgba(96,165,250,.04));border:1px solid rgba(74,222,128,.2);border-radius:16px;padding:1.75rem}
+    .ai-response{margin-top:1.25rem;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;font-size:.83rem;line-height:1.75;display:none;white-space:pre-wrap}
+    .ai-response.visible{display:block;animation:fadeUp .3s ease}
+    .ai-label{font-size:.67rem;color:var(--accent);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem}
+
+    /* Toast */
+    #toast{position:fixed;bottom:2rem;right:2rem;padding:.75rem 1.3rem;border-radius:12px;font-size:.8rem;z-index:999;transform:translateY(80px);opacity:0;transition:all .3s ease;max-width:320px}
+    #toast.show{transform:translateY(0);opacity:1}
+    #toast.success{background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);color:var(--accent)}
+    #toast.error{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);color:var(--danger)}
+
+    .empty{text-align:center;padding:3rem;color:var(--muted);font-size:.83rem}
+    .empty .ej{font-size:2.2rem;margin-bottom:.6rem}
+    .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(0,0,0,.25);border-top-color:#000;border-radius:50%;animation:spin .7s linear infinite}
+    .spinner-white{border-color:rgba(255,255,255,.25);border-top-color:#fff}
+
+    /* Modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:100;display:none;align-items:center;justify-content:center}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:430px;animation:fadeUp .3s ease}
+    .modal h3{font-family:'Syne',sans-serif;margin-bottom:1.25rem}
+    .modal-actions{display:flex;gap:.75rem;margin-top:1.5rem;justify-content:flex-end}
+    .mfield{margin-bottom:1rem}
+
+    @keyframes fadeDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:700px){.form-grid{grid-template-columns:1fr 1fr}.tabs{flex-wrap:wrap}}
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">Expense<span>.</span>AI</div>
+    <div class="total-pill">💰 Total: <strong id="header-total">$0.00</strong></div>
+  </header>
+
+  <!-- Summary cards -->
+  <div class="summary-grid" id="summary-grid">
+    <div class="sum-card"><div class="cat">Loading</div><div class="amt">—</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('expenses',this)">📋 Expenses</button>
+    <button class="tab" onclick="switchTab('add',this)">➕ Add Expense</button>
+    <button class="tab" onclick="switchTab('ai',this)">🤖 Ask AI</button>
+  </div>
+
+  <!-- EXPENSES PANEL -->
+  <div id="tab-expenses" class="panel active">
+    <div class="card">
+      <div class="card-title">
+        <div class="icon" style="background:rgba(74,222,128,.12)">📋</div>
+        All Expenses
+        <div style="margin-left:auto;display:flex;gap:.5rem">
+          <button class="btn btn-blue" style="font-size:.73rem;padding:.38rem .85rem" onclick="exportCSV()">⬇️ CSV</button>
+          <button class="btn btn-ghost" style="font-size:.73rem;padding:.38rem .85rem" onclick="loadExpenses()">↻ Refresh</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input id="search-input" type="text" placeholder="Search expenses..." oninput="filterTable()"/>
+        </div>
+        <select class="filter-select" id="cat-filter" onchange="filterTable()">
+          <option value="">All Categories</option>
+          <option>Food</option><option>Transport</option><option>Entertainment</option>
+          <option>Health</option><option>Shopping</option><option>Bills</option><option>Other</option>
+        </select>
+        <select class="filter-select" id="sort-select" onchange="filterTable()">
+          <option value="date-desc">Latest First</option>
+          <option value="date-asc">Oldest First</option>
+          <option value="amount-desc">Highest Amount</option>
+          <option value="amount-asc">Lowest Amount</option>
+        </select>
+        <span class="count-badge" id="count-badge">0 expenses</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Date</th><th>Title</th>
+            <th>Amount</th><th>Category</th><th>Notes</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="expenses-tbody">
+            <tr><td colspan="7"><div class="empty"><div class="ej">⏳</div>Loading...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD PANEL -->
+  <div id="tab-add" class="panel">
+    <div class="card">
+      <div class="card-title">
+        <div class="icon" style="background:rgba(74,222,128,.12)">➕</div>
+        Add New Expense
+      </div>
+      <div class="form-grid">
+        <div class="field" id="f-title">
+          <label>Title *</label>
+          <input id="add-title" type="text" placeholder="e.g. Lunch at cafe" oninput="clearErr('title')"/>
+          <span class="err" id="err-title">Title is required</span>
+        </div>
+        <div class="field" id="f-amount">
+          <label>Amount ($) *</label>
+          <input id="add-amount" type="number" placeholder="0.00" min="0.01" step="0.01" oninput="clearErr('amount')"/>
+          <span class="err" id="err-amount">Enter a valid amount</span>
+        </div>
+        <div class="field" id="f-category">
+          <label>Category *</label>
+          <select id="add-category" onchange="clearErr('category')">
+            <option value="">Select...</option>
+            <option>Food</option><option>Transport</option><option>Entertainment</option>
+            <option>Health</option><option>Shopping</option><option>Bills</option><option>Other</option>
+          </select>
+          <span class="err" id="err-category">Select a category</span>
+        </div>
+        <div class="field" id="f-date">
+          <label>Date *</label>
+          <input id="add-date" type="date" oninput="clearErr('date')"/>
+          <span class="err" id="err-date">Date is required</span>
+        </div>
+      </div>
+      <div class="form-grid2">
+        <div class="field">
+          <label>Notes (optional)</label>
+          <input id="add-notes" type="text" placeholder="Any extra detail..."/>
+        </div>
+        <button class="btn btn-primary" onclick="addExpense()" id="add-btn">➕ Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI PANEL -->
+  <div id="tab-ai" class="panel">
+    <div class="ai-box">
+      <div class="card-title" style="margin-bottom:.75rem">
+        <div class="icon" style="background:rgba(74,222,128,.12)">🤖</div>
+        Ask AI about your spending
+      </div>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:1rem">
+        Ask anything — trends, overspending, budgeting advice, category breakdowns.
+      </p>
+      <div style="display:flex;flex-wrap:wrap;gap:.45rem;margin-bottom:1rem">
+        <button class="btn btn-ghost" style="font-size:.72rem" onclick="setQ('Where am I overspending?')">Where am I overspending?</button>
+        <button class="btn btn-ghost" style="font-size:.72rem" onclick="setQ('What is my biggest expense category?')">Biggest category?</button>
+        <button class="btn btn-ghost" style="font-size:.72rem" onclick="setQ('Give me a full spending summary.')">Full summary</button>
+        <button class="btn btn-ghost" style="font-size:.72rem" onclick="setQ('How can I reduce my expenses?')">How to save money?</button>
+        <button class="btn btn-ghost" style="font-size:.72rem" onclick="setQ('What was my most expensive purchase?')">Most expensive?</button>
+        <button class="btn btn-ghost" style="font-size:.72rem" onclick="setQ('Give me a budget recommendation based on my spending.')">Budget advice?</button>
+      </div>
+      <div class="field" style="margin-bottom:1rem">
+        <label>Your Question</label>
+        <textarea id="ai-question" placeholder="e.g. How much did I spend on food?"></textarea>
+      </div>
+      <button class="btn btn-ai" onclick="askAI()" id="ai-btn">✨ Ask Groq AI</button>
+      <div id="ai-response" class="ai-response">
+        <div class="ai-label">🤖 Groq AI</div>
+        <div id="ai-answer"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h3>✏️ Edit Expense</h3>
+    <input type="hidden" id="edit-title-original"/>
+    <div class="field mfield">
+      <label>Amount ($)</label>
+      <input id="edit-amount" type="number" min="0.01" step="0.01"/>
+    </div>
+    <div class="field mfield">
+      <label>Category</label>
+      <select id="edit-category">
+        <option value="">Keep current</option>
+        <option>Food</option><option>Transport</option><option>Entertainment</option>
+        <option>Health</option><option>Shopping</option><option>Bills</option><option>Other</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Notes</label>
+      <input id="edit-notes" type="text" placeholder="Update notes..."/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = 'http://127.0.0.1:8000';
+let allExpenses = [];
+
+// Set today's date as default
+document.getElementById('add-date').valueAsDate = new Date();
+
+// ── Tabs ──
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'expenses') loadExpenses();
+}
+
+// ── Toast ──
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `show ${type}`;
+  setTimeout(() => t.className = '', 3500);
+}
+
+// ── Validation ──
+function clearErr(field) {
+  const f = document.getElementById('f-' + field);
+  const e = document.getElementById('err-' + field);
+  if (f) f.classList.remove('field-error');
+  if (e) e.classList.remove('show');
+}
+function showErr(field, msg) {
+  const f = document.getElementById('f-' + field);
+  const e = document.getElementById('err-' + field);
+  if (f) f.classList.add('field-error');
+  if (e) { if (msg) e.textContent = msg; e.classList.add('show'); }
+}
+function validateAdd() {
+  let ok = true;
+  const title    = document.getElementById('add-title').value.trim();
+  const amount   = parseFloat(document.getElementById('add-amount').value);
+  const category = document.getElementById('add-category').value;
+  const date     = document.getElementById('add-date').value;
+  if (!title)               { showErr('title', 'Title is required');         ok = false; }
+  if (!amount || amount<=0) { showErr('amount', 'Enter a valid amount > 0'); ok = false; }
+  if (!category)            { showErr('category', 'Select a category');      ok = false; }
+  if (!date)                { showErr('date', 'Date is required');           ok = false; }
+  return ok;
+}
+
+// ── Load & Render ──
+async function loadExpenses() {
+  document.getElementById('expenses-tbody').innerHTML =
+    `<tr><td colspan="7"><div class="empty"><div class="ej">⏳</div>Loading...</div></td></tr>`;
+  try {
+    const res  = await fetch(`${API}/expenses`);
+    const data = await res.json();
+    allExpenses = data.expenses || [];
+    renderSummary(data.summary || {});
+    renderTable(allExpenses);
+  } catch(e) {
+    document.getElementById('expenses-tbody').innerHTML =
+      `<tr><td colspan="7"><div class="empty"><div class="ej">❌</div>Cannot connect to API</div></td></tr>`;
+  }
+}
+
+function renderSummary(summary) {
+  const total = summary.total || 0;
+  document.getElementById('header-total').textContent = `$${total.toFixed(2)}`;
+  const cats = summary.by_category || {};
+  const colors = {Food:'#fbbf24',Transport:'#60a5fa',Entertainment:'#f472b6',Health:'#4ade80',Shopping:'#a78bfa',Bills:'#f87171',Other:'#94a3b8'};
+  const entries = Object.entries(cats);
+  const grid = document.getElementById('summary-grid');
+  if (entries.length === 0) {
+    grid.innerHTML = `<div class="sum-card"><div class="cat">No data yet</div><div class="amt" style="color:var(--muted)">$0.00</div></div>`;
+    return;
+  }
+  grid.innerHTML = entries.map(([cat, amt]) => `
+    <div class="sum-card">
+      <div class="cat">${cat}</div>
+      <div class="amt" style="color:${colors[cat]||'#94a3b8'}">$${amt.toFixed(2)}</div>
+      <div class="label">${((amt/total)*100).toFixed(0)}% of total</div>
+    </div>`).join('') +
+    `<div class="sum-card" style="border-color:rgba(74,222,128,.25)">
+      <div class="cat">Total</div>
+      <div class="amt">$${total.toFixed(2)}</div>
+      <div class="label">${entries.length} categories</div>
+    </div>`;
+}
+
+function renderTable(expenses) {
+  const tbody = document.getElementById('expenses-tbody');
+  document.getElementById('count-badge').textContent = `${expenses.length} expense${expenses.length!==1?'s':''}`;
+  if (expenses.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="ej">💸</div>No expenses found.</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = expenses.map((e, i) => `
+    <tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td>${e.Date||'—'}</td>
+      <td style="font-weight:500">${e.Title||'—'}</td>
+      <td class="amount-cell">$${parseFloat(e.Amount||0).toFixed(2)}</td>
+      <td><span class="cat-badge cat-${e.Category||'Other'}">${e.Category||'Other'}</span></td>
+      <td style="color:var(--muted);font-size:.76rem">${e.Notes||'—'}</td>
+      <td><div class="actions">
+        <button class="btn btn-ghost" style="padding:.35rem .7rem;font-size:.72rem"
+          onclick="openEdit('${e.Title}','${e.Amount}','${e.Category}','${e.Notes||''}')">✏️</button>
+        <button class="btn btn-danger" style="padding:.35rem .7rem;font-size:.72rem"
+          onclick="deleteExpense('${e.Title}')">🗑️</button>
+      </div></td>
+    </tr>`).join('');
+}
+
+// ── Filter & Sort ──
+function filterTable() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const cat    = document.getElementById('cat-filter').value;
+  const sort   = document.getElementById('sort-select').value;
+  let filtered = allExpenses.filter(e =>
+    (!search || (e.Title||'').toLowerCase().includes(search) || (e.Notes||'').toLowerCase().includes(search)) &&
+    (!cat || e.Category === cat)
+  );
+  filtered.sort((a, b) => {
+    if (sort === 'date-desc') return new Date(b.Date||0) - new Date(a.Date||0);
+    if (sort === 'date-asc')  return new Date(a.Date||0) - new Date(b.Date||0);
+    if (sort === 'amount-desc') return parseFloat(b.Amount||0) - parseFloat(a.Amount||0);
+    if (sort === 'amount-asc')  return parseFloat(a.Amount||0) - parseFloat(b.Amount||0);
+    return 0;
+  });
+  renderTable(filtered);
+}
+
+// ── Export CSV ──
+function exportCSV() {
+  if (!allExpenses.length) { showToast('No expenses to export', 'error'); return; }
+  const headers = ['Title','Amount','Category','Date','Notes'];
+  const rows = allExpenses.map(e => headers.map(h => `"${e[h]||''}"`).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'expenses.csv'; a.click();
+  showToast('📥 CSV exported!');
+}
+
+// ── Add ──
+async function addExpense() {
+  if (!validateAdd()) return;
+  const title    = document.getElementById('add-title').value.trim();
+  const amount   = parseFloat(document.getElementById('add-amount').value);
+  const category = document.getElementById('add-category').value;
+  const date     = document.getElementById('add-date').value;
+  const notes    = document.getElementById('add-notes').value.trim();
+  const btn = document.getElementById('add-btn');
+  btn.innerHTML = '<span class="spinner"></span> Adding...'; btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/expenses`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({title, amount, category, date, notes})
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showToast(`✅ "${title}" added!`);
+      ['add-title','add-amount','add-notes'].forEach(id => document.getElementById(id).value='');
+      document.getElementById('add-category').value='';
+      document.getElementById('add-date').valueAsDate = new Date();
+    } else { showToast(data.detail||'Failed to add', 'error'); }
+  } catch(e) { showToast('Cannot reach API', 'error'); }
+  btn.innerHTML = '➕ Add'; btn.disabled = false;
+}
+
+// ── Delete ──
+async function deleteExpense(title) {
+  if (!confirm(`Delete "${title}"?`)) return;
+  try {
+    const res = await fetch(`${API}/expenses/${encodeURIComponent(title)}`, {method:'DELETE'});
+    const data = await res.json();
+    if (res.ok) { showToast(`🗑️ "${title}" deleted`); loadExpenses(); }
+    else showToast(data.detail||'Failed to delete', 'error');
+  } catch(e) { showToast('Cannot reach API', 'error'); }
+}
+
+// ── Edit Modal ──
+function openEdit(title, amount, category, notes) {
+  document.getElementById('edit-title-original').value = title;
+  document.getElementById('edit-amount').value = amount;
+  document.getElementById('edit-category').value = category;
+  document.getElementById('edit-notes').value = notes;
+  document.getElementById('edit-modal').classList.add('open');
+}
+function closeModal() { document.getElementById('edit-modal').classList.remove('open'); }
+async function submitEdit() {
+  const title    = document.getElementById('edit-title-original').value;
+  const amount   = parseFloat(document.getElementById('edit-amount').value)||null;
+  const category = document.getElementById('edit-category').value||null;
+  const notes    = document.getElementById('edit-notes').value||null;
+  try {
+    const res = await fetch(`${API}/expenses/${encodeURIComponent(title)}`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({amount, category, notes})
+    });
+    const data = await res.json();
+    if (res.ok) { showToast(`✅ "${title}" updated!`); closeModal(); loadExpenses(); }
+    else showToast(data.detail||'Update failed', 'error');
+  } catch(e) { showToast('Cannot reach API', 'error'); }
+}
+
+// ── Ask AI ──
+function setQ(q) { document.getElementById('ai-question').value = q; }
+async function askAI() {
+  const question = document.getElementById('ai-question').value.trim();
+  if (!question) { showToast('Please enter a question', 'error'); return; }
+  const btn = document.getElementById('ai-btn');
+  btn.innerHTML = '<span class="spinner"></span> Thinking...'; btn.disabled = true;
+  document.getElementById('ai-response').classList.remove('visible');
+  try {
+    const res = await fetch(`${API}/ask`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({question})
+    });
+    const data = await res.json();
+    if (res.ok) {
+      document.getElementById('ai-answer').textContent = data.answer;
+      document.getElementById('ai-response').classList.add('visible');
+    } else showToast(data.detail||'AI error', 'error');
+  } catch(e) { showToast('Cannot reach API', 'error'); }
+  btn.innerHTML = '✨ Ask Groq AI'; btn.disabled = false;
+}
+
+document.getElementById('edit-modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+loadExpenses();
+</script>
+</body>
+</html>
