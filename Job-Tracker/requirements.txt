@@ -1,0 +1,11 @@
+# FastAPI backend
+fastapi
+uvicorn
+psycopg2-binary
+sqlalchemy
+python-dotenv
+pydantic
+
+# Flask frontend
+flask
+requests
