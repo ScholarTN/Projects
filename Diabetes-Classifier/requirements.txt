@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+gradio
+scikit-learn
+pandas
+numpy
+python-dotenv
