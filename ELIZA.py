@@ -108,6 +108,7 @@ bot = Eliza()
 
 print("ELIZA: How do you do. Please tell me your problem.")
 
+
 while True:
     user = input("YOU: ")
     if user.lower() in ["bye", "quit", "exit"]:
@@ -116,3 +117,4 @@ while True:
 
     response = bot.respond(user)
     print("ELIZA:", response)
+    
